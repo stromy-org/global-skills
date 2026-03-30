@@ -1,6 +1,6 @@
 ---
 name: conventional-commit
-description: Defines the repository-standard commit workflow using Conventional Commits and gitmoji. Triggers when creating commits in this repo.
+description: Defines the repository-standard commit workflow using Conventional Commits and gitmoji. Triggers when creating commits in this repo. Includes a "clean source control" mode for guided git hygiene — triages changes into commit, gitignore, or revert.
 ---
 
 # Conventional Commit
@@ -186,7 +186,7 @@ When the current branch is `main` or `master`, do NOT ask — handle it automati
 1. Review **all** changes first and decide the commit strategy (single or multiple commits per §5.1)
 2. Derive **one** branch name from the overall theme of the changes: `<type>/<kebab-case-theme>` (e.g., `feat/brand-integration-improvements`, `fix/auth-token-handling`). When multiple commit types are involved, use the highest-priority type (§2.1) for the branch prefix.
 3. Create and switch: `git checkout -b <branch>`
-4. Make **all** commits on this branch — stage and commit each logical unit in sequence (§5.1, §8)
+4. Make **all** commits on this branch — stage and commit each logical unit in sequence (§5.1, §9)
 5. Switch back: `git checkout main` (or `master`)
 6. **No-fast-forward merge**: `git merge --no-ff <branch>` — this creates a single merge commit preserving the branch topology in the git graph
 7. Delete the branch: `git branch -d <branch>`
@@ -252,7 +252,94 @@ The following must never be committed by this skill:
 
 If unsure whether a file is an artifact, treat it as excluded and ask before staging.
 
-## 8. Commit Execution
+## 8. Clean Source Control Mode
+
+An assisted mode for users who need help understanding what git is tracking and what to do about it. Activate with `/conventional-commit clean` or when the user asks to "clean up source control", "help with git status", or "tidy my repo".
+
+### 8.1 Purpose
+
+Many users end up with a messy working tree — untracked files that should be ignored, accidental changes that should be reverted, and real work that should be committed. This mode triages **every** change and guides the user through resolving it.
+
+### 8.2 Workflow
+
+1. **Full inventory**: Run `git status` and present a clear, grouped summary of:
+   - **Staged changes** (files already in the index)
+   - **Unstaged modifications** (tracked files with changes)
+   - **Untracked files** (new files git doesn't know about)
+
+2. **Triage each item**: For every file or group of related files, decide and recommend one of three actions:
+
+   | Action | When | Example |
+   |--------|------|---------|
+   | **Commit** | The change is intentional work that should be preserved | Source code, config, docs |
+   | **Gitignore** | The file should never be tracked — it's generated, personal, or environment-specific | `.DS_Store`, `*.pyc`, `.env`, IDE configs, build artifacts, `node_modules/` |
+   | **Revert** | The change is accidental or unwanted — restore to the last committed state | Unintended edits, debug prints left behind, scratch changes |
+
+3. **Present the triage plan**: Show a clear table grouping files by recommended action:
+
+   ```
+   ## Triage Plan
+
+   ### ✅ Commit (3 files)
+   - src/auth.py — New authentication module
+   - tests/test_auth.py — Tests for auth module
+   - CLAUDE.md — Updated project instructions
+
+   ### 🙈 Gitignore (2 files)
+   - .DS_Store — macOS system file
+   - __pycache__/ — Python bytecode cache
+
+   ### ⏪ Revert (1 file)
+   - src/main.py — Only change is a debug print statement
+   ```
+
+4. **Ask for confirmation**: Present the plan and ask the user to confirm or adjust. Unlike the standard commit workflow, this mode **always asks before acting** — the user is learning, so transparency matters.
+
+5. **Execute approved actions** in this order:
+   1. **Gitignore first**: Append patterns to `.gitignore`, then `git rm --cached` any already-tracked files that match new ignore patterns
+   2. **Revert second**: `git checkout -- <file>` for unstaged changes, `git reset HEAD <file>` then `git checkout -- <file>` for staged changes the user wants to discard
+   3. **Commit last**: Stage and commit the approved files using the standard conventional-commit format (§1–§7)
+
+6. **Explain as you go**: Briefly explain each git command before running it, so the user builds understanding. Keep explanations short — one sentence per command, not a tutorial.
+
+### 8.3 Triage Decision Tree
+
+```
+For each changed/untracked file:
+│
+├─ Is it a generated artifact, cache, or OS file?
+│  (.DS_Store, __pycache__, *.pyc, node_modules/, .env, *.log, build/, dist/)
+│  → GITIGNORE
+│
+├─ Is it an IDE/editor config?
+│  (.vscode/, .idea/, *.swp, *.swo)
+│  → GITIGNORE (unless project shares editor config intentionally)
+│
+├─ Is it a secret or credential?
+│  (.env, *.key, *.pem, credentials.json, service-account.json)
+│  → GITIGNORE + WARN user if it was ever committed
+│
+├─ Is the diff trivial/accidental?
+│  (only whitespace, a stray print/console.log, no semantic change)
+│  → REVERT
+│
+├─ Is it intentional work?
+│  → COMMIT (group with related files into logical commits per §5.1)
+│
+└─ Unsure?
+   → ASK the user — show the diff and let them decide
+```
+
+### 8.4 Rules
+
+- **Always confirm** before reverting or ignoring — never silently discard work
+- **Group related files** when presenting the triage plan (e.g., "these 3 Python cache files" not listing each one)
+- **Check existing `.gitignore`** before suggesting additions — don't duplicate patterns
+- **Warn about secrets**: If a file looks like a credential and is tracked, flag it prominently
+- **No judgment**: Use neutral language — the user is learning, not being evaluated
+- After cleanup, show the final `git status` so the user can see the clean state
+
+## 9. Commit Execution
 
 Use HEREDOC for proper message formatting:
 
