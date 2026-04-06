@@ -242,6 +242,25 @@ Includes token refresh and session management.
 - Default to session-scoped commits; do not auto-include unrelated tracked changes
 - In batch-review mode, include only user-approved groups after showing grouped file lists
 
+### 7.2 Backlog References (optional)
+
+When a commit addresses work tracked in a backlog item, include the item ID in the commit subject or body. This enables automatic progress detection by the backlog skill's progress scan.
+
+- Include the ID naturally — in the subject if it fits, otherwise in the body
+- Use the repo's ID prefix: `STR-006`, `APD-001`, `ORG-017`, etc.
+- Not every commit needs an ID — only when the work clearly maps to a tracked item
+- Do not force-fit IDs; unlinked commits are still detected via keyword matching
+
+**Example:**
+```
+feat(hansard): ✨ Add backward-looking analysis scaffold (STR-006)
+
+Implements the base pipeline for historical Hansard analysis.
+Addresses acceptance criteria #1 and #2 of STR-006.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
 ### 7.1 Hard Exclusions (never auto-commit)
 
 The following must never be committed by this skill:
