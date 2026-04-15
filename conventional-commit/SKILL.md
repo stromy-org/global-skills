@@ -189,7 +189,8 @@ When the current branch is `main` or `master`, do NOT ask — handle it automati
 4. Make **all** commits on this branch — stage and commit each logical unit in sequence (§5.1, §9)
 5. Switch back: `git checkout main` (or `master`)
 6. **No-fast-forward merge**: `git merge --no-ff <branch>` — this creates a single merge commit preserving the branch topology in the git graph
-7. Delete the branch: `git branch -d <branch>`
+7. **Sync submodules**: If the repo has submodules (`.gitmodules` exists), run `git submodule update --recursive` to keep submodule working trees aligned with the merged pointers
+8. Delete the branch: `git branch -d <branch>`
 
 **Key rule**: One branch per invocation, one merge. Multiple commits go on the **same** branch — never create a separate branch per commit. This preserves branch-per-change discipline with visible merge topology. No user confirmation needed — just do it and report what happened.
 
