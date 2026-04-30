@@ -1,0 +1,23 @@
+{
+  "bootstrap_commit": "90971af56c2f29dcf5c8054189953baa70cc60a4",
+  "bootstrap_date": "2026-04-30T11:23:17.374270+00:00",
+  "skills_version": "2.3",
+  "repo_profile": "data-store",
+  "skills_generated": [],
+  "skill_checksums": {
+    "quality-check": "sha256:d8442902dffdb0df61af18e0987bdb7bc9d34b95752cf113134578310dad6a2e",
+    "instruction-audit": "sha256:ec2e8856e0a222d52fdb33bca5ee7dbd026e3d49382b1917225e76fbe94e5f56"
+  },
+  "custom_adaptations": {},
+  "copied_files": [],
+  "adapted_files": [],
+  "files_generated": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+    ".codex/config.toml",
+    ".gemini/settings.json",
+    ".env.example",
+    ".claude/bootstrap-version.json"
+  ]
+}

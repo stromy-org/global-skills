@@ -1,0 +1,16 @@
+{
+  "context": {
+    "fileName": [
+      "AGENTS.md",
+      "GEMINI.md"
+    ]
+  },
+  "defaultApprovalMode": "default",
+  "tools": {
+    "sandbox": true
+  },
+  "checkpointing": {
+    "enabled": true
+  },
+  "mcpServers": {}
+}

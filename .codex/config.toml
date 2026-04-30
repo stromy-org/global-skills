@@ -1,0 +1,24 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# Codex project configuration
+# AGENTS.md is auto-loaded as primary instructions.
+
+# ── Instructions ───────────────────────────────────────────
+# If AGENTS.md is missing, try CLAUDE.md or GEMINI.md
+project_doc_fallback_filenames = ["CLAUDE.md", "GEMINI.md"]
+
+# ── Approval & Sandbox ────────────────────────────────────
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+# ── Reasoning ──────────────────────────────────────────────
+model_reasoning_effort = "high"
+
+# ── Web Search ─────────────────────────────────────────────
+web_search = "cached"
+
+# ── MCP Servers ────────────────────────────────────────────
+# Generated from .agents/mcp.json by scripts/render-mcp-config.py.
+# Do not hand-edit the [mcp_servers.*] blocks below; edit .agents/mcp.json.
+# BEGIN:GENERATED-MCP
+# END:GENERATED-MCP
