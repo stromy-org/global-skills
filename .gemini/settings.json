@@ -5,7 +5,7 @@
       "GEMINI.md"
     ]
   },
-  "defaultApprovalMode": "default",
+  "defaultApprovalMode": "auto",
   "tools": {
     "sandbox": true
   },
