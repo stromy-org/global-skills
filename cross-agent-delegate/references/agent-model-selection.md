@@ -8,21 +8,7 @@ This document is the authoritative cost reference for cross-agent delegation dec
 
 ---
 
-## 1. The Flat-Rate Inversion
-
-On a **Claude Max** subscription, all in-process Claude calls are covered by the flat monthly fee — marginal cost is effectively **zero**. This inverts the intuition that delegation saves money:
-
-| Path | Who pays |
-|------|----------|
-| Claude does the work in-process | Covered by Claude Max flat rate |
-| Claude delegates to Codex (OpenAI) | Bills your OpenAI API key on top of Max |
-| Claude delegates to Gemini (Google) | Bills your Google AI quota on top of Max |
-
-**Implication:** delegating to Codex or Gemini to "save Claude tokens" is almost always more expensive, not less. The legitimate reasons to delegate are capability (not cost): huge context window, shell-task specialisation, multimodal reasoning, or an independent second opinion. See `cross-agent-delegate` §2 for the full trigger list.
-
----
-
-## 2. Current Pricing
+## 1. Current Pricing
 
 Prices fetched live on **2026-05-02** from the official pricing pages listed in [Maintenance](#maintenance).
 

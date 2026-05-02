@@ -93,19 +93,20 @@ Model and effort are **separate axes**. Defaults in `~/.codex/config.toml` are `
 
 **Per the embedded `gpt-5-4-prompting` guidance: "Do not raise reasoning or complexity first. Tighten the prompt and verification rules before escalating."** If a `medium`-effort run fails, fix the prompt before bumping to `high`.
 
-### Gemini CLI (`gemini-3-pro` / `gemini-2.5-pro` / `gemini-2.5-flash`)
+### Gemini CLI (`gemini-2.5-flash` / `gemini-2.5-pro`)
 
 Gemini does **not** expose a reasoning-effort flag — thinking budget is allocated automatically. **Model choice is the effort lever.**
 
+> **Tier note:** This setup runs on the Gemini free tier (Tier 3). Only `gemini-2.5-flash` is available. `gemini-2.5-pro` and `gemini-3-pro` require a paid tier. Always use flash unless the user upgrades their Google AI quota.
+
 | Model | When |
 |-------|------|
-| **`gemini-3-pro`** | Default. Multimodal reasoning, Google Search grounding, deepest reasoning. Use for architecture passes, security audits, anything with images/diagrams, anything needing fresh web facts |
-| **`gemini-2.5-pro`** | When you specifically want 2.5-Pro's behavior (more conservative, well-known output style) — rarely the right pick now that 3-pro is GA |
-| **`gemini-2.5-flash`** | Bulk doc generation, "summarize these 200 files", high-throughput repo scans where reasoning depth doesn't matter |
+| **`gemini-2.5-flash`** | **Default for this setup.** Architecture passes, bulk doc generation, repo scans, refactor impact analysis, structured data review. Pinned via `~/.gemini/settings.json` `model` field — no flag needed per call. |
+| **`gemini-2.5-pro`** | Only when the user explicitly requests it and has upgraded to a paid Gemini tier. Pass `--model gemini-2.5-pro` in the bridge call. |
 
-Pass via the bridge: `/cc-gemini-plugin:gemini --model gemini-2.5-flash --dirs src "list every public function and its docstring"`.
+Pass via the bridge: `/cc-gemini-plugin:gemini --dirs src "list every public function and its docstring"` (no `--model` needed — flash is the configured default).
 
-If unset, the bridge uses Gemini CLI's configured default — fine for most analysis tasks.
+If unset, the bridge uses the Gemini CLI's configured default (`~/.gemini/settings.json` `model` field, currently `gemini-2.5-flash`).
 
 ### Cross-CLI selection cheatsheet
 
@@ -114,10 +115,10 @@ If unset, the bridge uses Gemini CLI's configured default — fine for most anal
 | Architecture / risky decision | Claude Opus 4.7 (host, no delegation) |
 | Independent review of a finished diff | `/codex:review` at default effort |
 | Adversarial review, finding subtle bugs | `/codex:adversarial-review`, escalate to `--effort high` only if first pass is shallow |
-| Whole-repo summary or grep over 50k+ lines | Gemini 3-pro via bridge |
+| Whole-repo summary or grep over 50k+ lines | Gemini 2.5-flash via bridge (no `--model` flag needed) |
 | Bulk mechanical edits across many files | Codex `--model spark --effort low` OR Gemini 2.5-flash |
-| Visual / diagram / screenshot reasoning | Gemini 3-pro (only one that's natively multimodal here) |
-| Fresh web facts mid-analysis | Gemini 3-pro (built-in Search grounding) |
+| Visual / diagram / screenshot reasoning | Gemini 2.5-flash (flash supports multimodal) |
+| Fresh web facts mid-analysis | Gemini 2.5-flash (built-in Search grounding) |
 | Long-running background fix | `/codex:rescue --background` at default effort |
 
 ## 5. How to invoke
@@ -174,6 +175,30 @@ Project configs use `sandbox_mode = "workspace-write"` + `approval_policy = "on-
 
 If Codex is blocked mid-task: check that the repo path is in `~/.codex/config.toml`. Missing entries are the most common cause of unexpected "sandbox permissions" errors in non-interactive delegation.
 
+#### Codex + nested git repos (Cowork/, Stromy/, submodules)
+
+`workspace-write` covers the **active git repo's working tree only**. Any directory that is its own git repo — `Cowork/`, `Stromy/`, checked-out submodules — is **outside** that scope even if it's physically nested inside the workdir. Codex will refuse to write there.
+
+**Fix: use `-C` to set the target repo as the workdir before dispatching.**
+
+```bash
+# Wrong — Codex runs from stromy-org and can't write to Cowork/
+/codex:rescue "rewrite the dutch-gov-data skill in Cowork/"
+
+# Right — bypass the plugin, set workdir explicitly
+codex exec -C /Users/williammasquelier/Repositories/stromy-org/Cowork \
+  "rewrite .claude/skills/dutch-gov-data/SKILL.md ..."
+```
+
+The same applies to any submodule you've checked out: use `codex exec -C <submodule-path>` instead of delegating from the parent repo. You can also pass `--add-dir <path>` to extend the writable set while keeping the primary workdir:
+
+```bash
+codex exec --add-dir /Users/williammasquelier/Repositories/stromy-org/Cowork \
+  "make changes in both stromy-org and Cowork/"
+```
+
+The `codex:codex-rescue` plugin (which calls `codex-companion.mjs task`) has **no `-C` or `--add-dir` support** — it always uses the Claude Code session's cwd. When the target is a nested repo, skip the plugin and invoke `codex exec` directly from the Bash tool.
+
 ### Gemini
 
 The Gemini equivalent of Codex's trusted-list is `defaultApprovalMode: "auto"` in the project's `.gemini/settings.json`. Every org repo's settings file uses `"auto"` so Gemini CLI can operate non-interactively when delegated.
@@ -208,6 +233,7 @@ When Codex (or Gemini) is delegated **write work**, the host agent (Claude) must
 
 - **Stale auth** — Codex/Gemini token expired silently; tool returns garbage. If a delegated call returns nonsense, suspect auth before suspecting the model.
 - **Sandbox mismatch** — the delegated agent runs under its own approval policy, not the host's. A hook you rely on in Claude does not fire inside a Codex sub-call.
+- **Codex refuses to write to a nested repo** — `workspace-write` only covers the active git repo, not physically-nested repos (`Cowork/`, `Stromy/`, submodules). Use `codex exec -C <path>` directly; do not use the `codex:rescue` plugin for cross-repo writes (see §7).
 - **Transcript fragmentation** — when something goes wrong, you now have three logs to correlate. Keep delegated calls small and self-contained so the failure surface stays narrow.
 - **Recursion / loop billing** — never let agent A call agent B which calls agent A. Enforce one hop max (§3.2).
 
