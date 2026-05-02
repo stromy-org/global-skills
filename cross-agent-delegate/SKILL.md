@@ -56,6 +56,8 @@ Each CLI exposes a different lever. **Match the lever to the task — don't pay 
 
 The default rule across all three: **tighten the prompt before escalating effort.** Better contracts beat higher reasoning. Only raise effort when the task genuinely requires deeper search, planning, or adversarial scrutiny.
 
+> **Cost reference:** `references/agent-model-selection.md` (in this skill's directory) has live-fetched pricing, quality/price ratios, and a sweet-spot table per task shape. **On a Claude Max flat-rate plan, in-process Claude work has zero marginal cost — every cross-agent call adds cost against your OpenAI or Google quota.** The tables below show model character and task fit; see the reference for exact per-MTok figures.
+
 ### Claude Code (host)
 
 | Model | When |
@@ -223,13 +225,41 @@ Did the user explicitly ask for codex/gemini?
 
 ## 11. Maintenance
 
-**§4 (model + reasoning effort) decays as model lineups evolve.** Re-check it whenever any of the following happens:
+**§4 (model + reasoning effort) and `references/agent-model-selection.md` decay as model lineups and prices evolve.** Re-check whenever any of the following happens:
 
 - A new Claude / GPT / Gemini model GAs (e.g., Opus 4.8, GPT-5.6, Gemini 4)
 - An old model is retired or repriced
 - A CLI adds, removes, or renames a flag (`codex --help`, `gemini --help`, `/codex:rescue`'s argument-hint)
 - A CLI changes its default model or default reasoning effort
+- `references/agent-model-selection.md` last-updated date exceeds 90 days (flagged by `instruction-audit` drift scan)
 
-Things to update together: the per-CLI tables in §4, the cross-CLI cheatsheet, defaults referenced in `~/.codex/config.toml`, and any cached model names in `/codex:rescue`'s `spark` mapping.
+**Update procedure — always fetch live, never use training memory for pricing:**
 
-When in doubt about current capabilities, re-run `codex --help`, `codex exec --help`, `gemini --help`, and skim the latest plugin command files at `~/.claude/plugins/cache/{openai-codex,cc-gemini-plugin}/**/commands/*.md` — those are the authoritative surface, not this doc.
+```
+1. Fetch live pricing pages (URLs in references/agent-model-selection.md § Maintenance):
+     https://www.anthropic.com/pricing
+     https://openai.com/api/pricing/
+     https://ai.google.dev/pricing
+
+2. Verify current CLI flag→model mappings:
+     codex --help  (or: codex exec --help)
+     gemini --help
+
+3. Check benchmark leaderboards if quality ordering has plausibly shifted:
+     https://www.swebench.com/   (SWE-bench Verified)
+     Search GitHub/arXiv for "Terminal-Bench" for latest run
+
+4. Update references/agent-model-selection.md:
+     - Pricing tables in §2
+     - Quality/price ratios in §3 if rankings shifted
+     - "Last updated" date at the top
+
+5. Update §4 of this file:
+     - Per-CLI model tables (names, cost tiers, effort flags)
+     - Cross-CLI cheatsheet if sweet spots changed
+     - spark/flash alias footnotes if CLI flag names changed
+
+6. Update defaults referenced in ~/.codex/config.toml if default model changed.
+```
+
+When in doubt about current CLI surface, re-run `codex --help`, `codex exec --help`, `gemini --help`, and skim the latest plugin command files at `~/.claude/plugins/cache/{openai-codex,cc-gemini-plugin}/**/commands/*.md` — those are authoritative, not this doc.
